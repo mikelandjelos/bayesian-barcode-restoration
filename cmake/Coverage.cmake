@@ -1,0 +1,12 @@
+include_guard(GLOBAL)
+
+function(project_name_enable_coverage target)
+  if(PROJECT_ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+      target_compile_options(${target} PRIVATE --coverage -O0 -g)
+      target_link_options(${target} PRIVATE --coverage)
+    else()
+      message(FATAL_ERROR "Coverage is currently supported only by GCC and Clang.")
+    endif()
+  endif()
+endfunction()

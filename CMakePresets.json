@@ -1,0 +1,111 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 28, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "PROJECT_ENABLE_WARNINGS": "ON"
+      }
+    },
+    {
+      "name": "dev-gcc",
+      "displayName": "Development (GCC)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "g++",
+        "PROJECT_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "dev-clang",
+      "displayName": "Development (Clang)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "PROJECT_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "dev-gcc",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "release",
+      "inherits": "dev-gcc",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "PROJECT_BUILD_TESTS": "OFF" }
+    },
+    {
+      "name": "asan",
+      "inherits": "dev-clang",
+      "cacheVariables": { "PROJECT_ENABLE_ASAN": "ON" }
+    },
+    {
+      "name": "ubsan",
+      "inherits": "dev-clang",
+      "cacheVariables": { "PROJECT_ENABLE_UBSAN": "ON" }
+    },
+    {
+      "name": "tsan",
+      "inherits": "dev-clang",
+      "cacheVariables": { "PROJECT_ENABLE_TSAN": "ON" }
+    },
+    {
+      "name": "coverage",
+      "inherits": "dev-gcc",
+      "cacheVariables": { "PROJECT_ENABLE_COVERAGE": "ON" }
+    },
+    {
+      "name": "clang-tidy",
+      "inherits": "dev-clang",
+      "cacheVariables": { "PROJECT_ENABLE_CLANG_TIDY": "ON" }
+    },
+    {
+      "name": "benchmarks",
+      "inherits": "release",
+      "cacheVariables": { "PROJECT_BUILD_BENCHMARKS": "ON" }
+    },
+    {
+      "name": "ci-gcc",
+      "inherits": "dev-gcc",
+      "cacheVariables": { "PROJECT_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "ci-clang",
+      "inherits": "dev-clang",
+      "cacheVariables": { "PROJECT_WARNINGS_AS_ERRORS": "ON" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev-gcc", "configurePreset": "dev-gcc" },
+    { "name": "dev-clang", "configurePreset": "dev-clang" },
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "asan", "configurePreset": "asan" },
+    { "name": "ubsan", "configurePreset": "ubsan" },
+    { "name": "tsan", "configurePreset": "tsan" },
+    { "name": "coverage", "configurePreset": "coverage" },
+    { "name": "clang-tidy", "configurePreset": "clang-tidy" },
+    { "name": "benchmarks", "configurePreset": "benchmarks" },
+    { "name": "ci-gcc", "configurePreset": "ci-gcc" },
+    { "name": "ci-clang", "configurePreset": "ci-clang" }
+  ],
+  "testPresets": [
+    { "name": "dev-gcc", "configurePreset": "dev-gcc", "output": { "outputOnFailure": true } },
+    { "name": "dev-clang", "configurePreset": "dev-clang", "output": { "outputOnFailure": true } },
+    { "name": "debug", "configurePreset": "debug", "output": { "outputOnFailure": true } },
+    { "name": "asan", "configurePreset": "asan", "output": { "outputOnFailure": true } },
+    { "name": "ubsan", "configurePreset": "ubsan", "output": { "outputOnFailure": true } },
+    { "name": "tsan", "configurePreset": "tsan", "output": { "outputOnFailure": true } },
+    { "name": "coverage", "configurePreset": "coverage", "output": { "outputOnFailure": true } },
+    { "name": "ci-gcc", "configurePreset": "ci-gcc", "output": { "outputOnFailure": true } },
+    { "name": "ci-clang", "configurePreset": "ci-clang", "output": { "outputOnFailure": true } }
+  ]
+}

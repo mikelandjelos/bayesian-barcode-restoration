@@ -1,0 +1,12 @@
+project_name_find_gtest()
+include(GoogleTest)
+
+add_executable(project_core_unit_tests unit/project_core_test.cpp)
+target_link_libraries(project_core_unit_tests PRIVATE project::core GTest::gtest_main)
+project_name_configure_target(project_core_unit_tests)
+gtest_discover_tests(project_core_unit_tests)
+
+add_executable(project_cli_integration_tests integration/project_cli_test.cpp)
+target_link_libraries(project_cli_integration_tests PRIVATE project::core GTest::gtest_main)
+project_name_configure_target(project_cli_integration_tests)
+gtest_discover_tests(project_cli_integration_tests)

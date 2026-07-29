@@ -1,0 +1,17 @@
+include_guard(GLOBAL)
+
+function(project_name_set_warnings target)
+  if(MSVC)
+    set(warnings /W4 /permissive-)
+    if(PROJECT_WARNINGS_AS_ERRORS)
+      list(APPEND warnings /WX)
+    endif()
+  else()
+    set(warnings -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wformat=2
+                 -Wcast-align -Wnull-dereference -Wdouble-promotion)
+    if(PROJECT_WARNINGS_AS_ERRORS)
+      list(APPEND warnings -Werror)
+    endif()
+  endif()
+  target_compile_options(${target} PRIVATE ${warnings})
+endfunction()

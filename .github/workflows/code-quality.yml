@@ -1,0 +1,23 @@
+name: Code quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: ./scripts/check-format.sh
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pipx install conan
+      - run: ./scripts/lint.sh

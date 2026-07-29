@@ -1,0 +1,5 @@
+project_name_find_benchmark()
+
+add_executable(project_core_benchmarks project_core_benchmark.cpp)
+target_link_libraries(project_core_benchmarks PRIVATE project::core benchmark::benchmark_main)
+project_name_configure_target(project_core_benchmarks)

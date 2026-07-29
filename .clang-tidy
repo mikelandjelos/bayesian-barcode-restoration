@@ -1,0 +1,22 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  concurrency-*,
+  cppcoreguidelines-avoid-magic-numbers,
+  cppcoreguidelines-narrowing-conversions,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*
+WarningsAsErrors: ''
+HeaderFilterRegex: '^.*/(include|src|apps|tests|benchmarks)/.*'
+FormatStyle: file
+CheckOptions:
+  - key: readability-identifier-length.MinimumIdentifierLength
+    value: '2'
+  - key: readability-magic-numbers.IgnoredIntegerValues
+    value: '0;1;2'
+...

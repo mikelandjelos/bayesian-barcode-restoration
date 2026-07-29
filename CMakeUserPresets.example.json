@@ -1,0 +1,19 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "local-dev-gcc",
+      "inherits": "dev-gcc",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/dev-gcc/conan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "local-dev-clang",
+      "inherits": "dev-clang",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/dev-clang/conan/conan_toolchain.cmake"
+      }
+    }
+  ]
+}

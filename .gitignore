@@ -1,0 +1,53 @@
+# Build and CMake user state
+/build/
+/cmake-build-*/
+/CMakeUserPresets.json
+/compile_commands.json
+/CMakeCache.txt
+/CMakeFiles/
+/CTestTestfile.cmake
+/Testing/
+
+# Conan
+/.conan/
+/.conan2/
+/conanbuild.*
+/conanrun.*
+/conan_toolchain.cmake
+/CMakePresets.json.conan
+
+# Python and notebooks
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Generated research data and run artifacts
+/research/data/raw/*
+/research/data/processed/*
+!/research/data/raw/.gitkeep
+!/research/data/processed/.gitkeep
+/artifacts/
+/runs/
+/results/
+
+# Coverage and profiling
+/coverage/
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+perf.data*
+callgrind.out.*
+massif.out.*
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

@@ -8,8 +8,8 @@ proofs of concept - without forcing every project to carry unnecessary tooling.
 
 ## Status
 
-This repository is currently a specification, not yet an initialized template.
-The implementation plan is defined by the two companion documents:
+The initial template scaffold is in place. Its design contract is defined by
+two companion documents:
 
 - [Setup specification](CPP_PROJECT_TEMPLATE_SETUP.md) is the concrete build
   checklist: repository layout, CMake targets and presets, Conan, checks, CI,
@@ -17,11 +17,9 @@ The implementation plan is defined by the two companion documents:
 - [Living project guide](CPP_PROJECT_TEMPLATE_LIVING_GUIDE.md) is the evolving
   policy: what is required, optional, conditional, deferred, or still to do.
 
-No CMake project, dependencies, scripts, presets, or CI workflows have been
-created yet. Consequently, the commands below describe the target developer
-workflow and are not runnable until the initial setup is implemented.
+The living guide tracks the remaining optional and follow-up work.
 
-## Planned baseline
+## Baseline
 
 - C++20, modern target-based CMake, CMake Presets, and Ninja.
 - GCC and Clang as first-class Linux compilers.
@@ -42,27 +40,28 @@ and maintained. GUI frameworks, CUDA, OpenMP, Python bindings, containers,
 packaging, and release automation are intentionally outside the initial
 baseline.
 
-## Intended quick start
+## Quick start
 
-Once the scaffold exists, a clean Linux checkout should follow this path:
+A clean Linux checkout needs CMake 3.28+, Ninja, a GCC or Clang compiler, and
+Conan 2. The bootstrap script checks these prerequisites without installing
+anything on the host.
 
 ```bash
 git clone <repository>
 cd <repository>
 
 ./scripts/bootstrap.sh
-conan install . --build=missing <documented-arguments>
-cmake --preset dev-gcc
+./scripts/configure.sh dev-gcc
 cmake --build --preset dev-gcc
 ctest --preset dev-gcc
 ```
 
-CMake Presets will be the canonical interface. The initial template will also
-include a `justfile` with shortcuts such as `just build`, `just test`, and
-`just format`; its recipes must only delegate to the canonical CMake and script
-commands. The project will remain fully usable without `just`.
+CMake Presets are canonical. The included `justfile` offers shortcuts such as
+`just test`, `just format`, and `just asan`; its recipes only delegate to the
+canonical CMake and script commands. The project remains fully usable without
+`just`.
 
-## Planned repository map
+## Repository map
 
 ```text
 include/      Public C++ headers

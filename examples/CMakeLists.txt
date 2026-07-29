@@ -1,0 +1,3 @@
+add_executable(project_core_example project_core_example.cpp)
+target_link_libraries(project_core_example PRIVATE project::core)
+project_name_configure_target(project_core_example)
