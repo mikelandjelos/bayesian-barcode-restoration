@@ -3,6 +3,7 @@ set -euo pipefail
 
 preset="${1:-dev-gcc}"
 build_dir="build/${preset}"
+toolchain_file="$(pwd)/${build_dir}/conan/conan_toolchain.cmake"
 build_type="Debug"
 compiler_args=()
 conan_command=(conan)
@@ -24,4 +25,12 @@ esac
 
 "${conan_command[@]}" install . --build=missing --output-folder="$build_dir" -s build_type="$build_type" \
   -s compiler.cppstd=20 "${compiler_args[@]}"
-cmake --preset "$preset" -DCMAKE_TOOLCHAIN_FILE="${build_dir}/conan/conan_toolchain.cmake"
+
+# CMake reads the toolchain only on the first configure. A cache created by an
+# editor before Conan runs cannot be repaired by merely setting the variable.
+if [[ -f "${build_dir}/CMakeCache.txt" ]] && \
+  ! rg --fixed-strings --quiet "CMAKE_TOOLCHAIN_FILE:FILEPATH=${toolchain_file}" "${build_dir}/CMakeCache.txt"; then
+  cmake -E rm -rf "${build_dir}/CMakeCache.txt" "${build_dir}/CMakeFiles"
+fi
+
+cmake --preset "$preset" -DCMAKE_TOOLCHAIN_FILE="$toolchain_file"
