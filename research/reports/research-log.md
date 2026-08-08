@@ -7,7 +7,7 @@ research notebooks. A gate is advanced only after explicit review.
 
 | Notebook | Approach | Status |
 | --- | --- | --- |
-| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 5 implemented |
+| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 6 complete |
 | `02_discrete_sheaf_constraints.ipynb` | Discrete compatibility/message passing | Planned |
 | `03_bayesian_hmm_restoration.ipynb` | Bayesian/HMM restoration | Planned |
 | Adaptive local decoder | Direction-changing joint inference | Design hypothesis documented |
@@ -419,3 +419,76 @@ These examples confirm that the sheaf penalty is most useful when overlapping
 latent inverse problems need reconciliation. It is not a universal denoiser,
 and strong consistency can be harmful when all redundant observations share
 the same ambiguity.
+
+## 2026-08-08 — Linear cellular sheaf, Gate 6
+
+### Objective
+
+Test whether the dense joint sheaf solve can be compiled conceptually into a
+bounded, low-memory local algorithm without changing the underlying linear
+system or materially reducing recovery quality.
+
+### Construction
+
+- Implement local application of the `4 x 4` blur matrix and its transpose for
+  each node without constructing the block-diagonal global operator.
+- Store confidence as a 36-value vector rather than a dense diagonal matrix.
+- Apply the sheaf Laplacian by computing and scattering horizontal overlap and
+  vertical cross-scanline disagreements, without materializing the coboundary
+  or Laplacian.
+- Combine those operations into a function for
+  `H.T W H + lambda L + eta I`.
+- Implement conjugate gradient with `float32`, zero initialization, and a hard
+  maximum budget of 24 updates.
+- Reprocess all 648 retained Gate 5 cases and compare against the exact dense
+  `float64` joint estimates.
+- Plot residual convergence for the five representative difficult cases and
+  the global estimates for the case with the largest dense/iterative
+  difference.
+
+### Operator verification
+
+For a seeded random vector, the local Laplacian application differs from the
+dense `L @ x` result by at most `8.882e-16`. The complete local normal operator
+differs from its dense counterpart by at most `1.776e-15`. These errors are at
+floating-point roundoff scale, confirming that the local code implements the
+same mathematical model.
+
+### Result
+
+| Solver | Exact success | Mean RMSE | Median current-host time |
+| --- | ---: | ---: | ---: |
+| Dense `float64` direct | 98.3% | 0.0940 | 69.32 us |
+| Matrix-free `float32` CG | 98.3% | 0.0941 | 1,346.36 us |
+
+Every case used the full 24-update budget. The mean per-case maximum continuous
+difference from the direct estimate is `0.001458`; the worst is `0.026161`.
+The bounded solver therefore preserves aggregate decoding behavior for this
+sweep while using substantially less explicit storage.
+
+The named matrix-free solver core occupies 928 bytes: five 36-value state
+vectors, one 36-value confidence vector, and one local `4 x 4` blur matrix in
+`float32`. Including the current observation vector raises this to 1,072 bytes.
+These figures exclude input images, output/history, code and stack overhead,
+adaptive graph/search state, and the future symbology decoder.
+
+### Performance interpretation
+
+The matrix-free Python implementation is roughly 19 times slower than the
+dense solve in this run. This is expected for a tiny `36 x 36` problem because
+NumPy delegates the dense solve to compiled LAPACK, while the local operator
+uses repeated interpreted Python loops. It proves the storage and computation
+shape, not embedded speed. A C++ implementation must benchmark the local
+operator, iteration budget, peak RAM, and fixed-point options on target-like
+hardware before the embedded-performance question is resolved.
+
+### Linear notebook conclusion
+
+The first notebook now covers scalar intuition, overlapping vector stalks,
+fixed multi-scanline fusion, a blur/noise likelihood, baseline ablation,
+robustness and failure examples, and a bounded matrix-free solver. This
+completes the planned linear cellular-sheaf foundation.
+
+Stop here. After review and commit, the next research gate begins the separate
+`02_discrete_sheaf_constraints.ipynb` with a tiny branching compatibility graph
+before introducing barcode states, adaptive direction, or symbology rules.
