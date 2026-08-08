@@ -7,7 +7,7 @@ research notebooks. A gate is advanced only after explicit review.
 
 | Notebook | Approach | Status |
 | --- | --- | --- |
-| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 1 implemented |
+| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 2 implemented |
 | `02_discrete_sheaf_constraints.ipynb` | Discrete compatibility/message passing | Planned |
 | `03_bayesian_hmm_restoration.ipynb` | Bayesian/HMM restoration | Planned |
 | Adaptive local decoder | Direction-changing joint inference | Design hypothesis documented |
@@ -126,3 +126,53 @@ stalks and fixed multi-scanline fusion in the linear notebook. Then validate
 branch selection and incremental soft decoding independently in the discrete
 notebook. The adaptive integration experiment follows those two foundations
 and precedes any production architecture decision.
+
+## 2026-08-08 — Linear cellular sheaf, Gate 2
+
+### Objective
+
+Replace scalar consensus with overlapping vector stalks on a straight,
+module-aligned synthetic binary sequence. Verify that restriction maps compare
+only duplicate descriptions of the same physical modules and therefore do not
+erase genuine black/white transitions.
+
+### Construction
+
+- Use the eight-module truth `[1, 1, 0, 1, 0, 0, 1, 0]`.
+- Create three four-module windows with stride two and a two-module overlap.
+- Give each node stalk dimension four and each edge stalk dimension two.
+- Implement restriction maps as coordinate selectors: the last two values of
+  the earlier window and the first two values of the later window.
+- Assemble a `4 x 12` coboundary and its `12 x 12` sheaf Laplacian.
+- Introduce one explicit contradiction: the second window reports global
+  module 2 as `1.0` instead of `0.0`, with confidence `0.03`.
+- Apply confidence-weighted overlap regularization with `lambda = 3.0`, then
+  glue duplicate local copies back into one global sequence.
+
+### Result
+
+The notebook executed successfully from a clean kernel, with every assertion
+passing. The coboundary has rank four, leaving an eight-dimensional kernel—the
+same dimension as the global module sequence. The stacked truth, despite its
+many black/white transitions, has exactly zero overlap disagreement.
+
+The corrupted local copy moved from `1.0` to `0.0385`, while its trusted
+overlapping copy moved only from `0.0` to `0.0288`. Their disagreement fell
+from `1.0` to `0.0096`. Gluing the restored stalks produced
+`[1.0, 1.0, 0.0337, 1.0, 0.0, 0.0, 1.0, 0.0]`, which thresholded to the exact
+original sequence.
+
+### Interpretation
+
+The sheaf now enforces "same physical module, same value" rather than
+"neighboring modules, same value." It can preserve arbitrary barcode
+transitions while identifying contradictory overlap measurements. The
+restriction maps, not generic smoothing, encode this behavior.
+
+### Review checkpoint
+
+Stop here. The example still assumes perfect module alignment and deliberately
+constructed local values; it is not yet a camera observation model. The next
+gate, only after explicit approval, is fixed multi-scanline fusion with a
+controlled damaged region. Gaussian blur, sensor noise, unknown alignment,
+adaptive direction, and symbology decoding remain out of scope.
