@@ -7,7 +7,7 @@ research notebooks. A gate is advanced only after explicit review.
 
 | Notebook | Approach | Status |
 | --- | --- | --- |
-| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 2 implemented |
+| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 3 implemented |
 | `02_discrete_sheaf_constraints.ipynb` | Discrete compatibility/message passing | Planned |
 | `03_bayesian_hmm_restoration.ipynb` | Bayesian/HMM restoration | Planned |
 | Adaptive local decoder | Direction-changing joint inference | Design hypothesis documented |
@@ -176,3 +176,61 @@ constructed local values; it is not yet a camera observation model. The next
 gate, only after explicit approval, is fixed multi-scanline fusion with a
 controlled damaged region. Gaussian blur, sensor noise, unknown alignment,
 adaptive direction, and symbology decoding remain out of scope.
+
+## 2026-08-08 — Linear cellular sheaf, Gate 3
+
+### Objective
+
+Demonstrate fixed multi-scanline fusion on a straight, perfectly aligned
+barcode. Use redundant graph paths and known confidence to correct a controlled
+damaged region while retaining the overlapping-window semantics from Gate 2.
+
+### Construction
+
+- Replicate the eight-module truth across three scanlines.
+- Divide each scanline into three four-module windows, producing a `3 x 3`
+  node grid with four values per node.
+- Use two-dimensional horizontal edge stalks to compare window overlaps.
+- Use four-dimensional vertical edge stalks with identity restrictions to
+  compare corresponding windows on adjacent scanlines.
+- Flip modules 2–4 in the middle scanline and assign those measurements
+  confidence `0.02`; keep all other confidence values at `1.0`.
+- Solve the confidence-weighted linear problem with `lambda = 2.0`, glue each
+  scanline's overlapping windows, and average the nearly consistent restored
+  scanlines into one global estimate.
+- Retain plain and confidence-weighted per-module means as explicit baselines.
+
+### Result
+
+The notebook executed successfully from a clean kernel, with every assertion
+passing. Nine nodes produce 36 local variables. Six horizontal edges contribute
+12 scalar comparisons, and six vertical edges contribute 24, giving a
+`36 x 36` coboundary. Its rank is 28 because grid cycles make some comparisons
+redundant. The kernel remains eight-dimensional and contains the correctly
+replicated barcode with zero disagreement.
+
+The damaged input has consistency energy `12.0`; the restored local states have
+energy `0.000291`. The fused global estimate is
+`[1.0, 1.0, 0.0115, 0.9885, 0.0115, 0.0, 1.0, 0.0]` and thresholds to the exact
+truth. The recovered scanlines agree closely even in the damaged region.
+
+### Interpretation and baseline
+
+The grid demonstrates how clean scanlines above and below constrain a damaged
+local region through vertical edges while horizontal overlaps maintain local
+sequence consistency. This is redundant constraint propagation rather than a
+literal path-routing algorithm.
+
+Because alignment and confidence are already known, a simple confidence-
+weighted per-module mean produces nearly the same values in this experiment.
+The sheaf has not yet demonstrated a practical advantage over that baseline.
+It must earn its added structure in later experiments involving observation
+blur, local coverage, alignment, geometry, or decoder constraints.
+
+### Review checkpoint
+
+Stop here. The next gate, only after explicit approval, adds controlled Gaussian
+blur and sensor noise while keeping geometry and module alignment fixed. It
+must compare the sheaf result against straightforward fusion/restoration
+baselines. Unknown direction, adaptive traversal, and symbology decoding remain
+out of scope.
