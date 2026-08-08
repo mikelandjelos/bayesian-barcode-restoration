@@ -7,7 +7,7 @@ research notebooks. A gate is advanced only after explicit review.
 
 | Notebook | Approach | Status |
 | --- | --- | --- |
-| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 3 implemented |
+| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 4 implemented |
 | `02_discrete_sheaf_constraints.ipynb` | Discrete compatibility/message passing | Planned |
 | `03_bayesian_hmm_restoration.ipynb` | Bayesian/HMM restoration | Planned |
 | Adaptive local decoder | Direction-changing joint inference | Design hypothesis documented |
@@ -233,4 +233,70 @@ Stop here. The next gate, only after explicit approval, adds controlled Gaussian
 blur and sensor noise while keeping geometry and module alignment fixed. It
 must compare the sheaf result against straightforward fusion/restoration
 baselines. Unknown direction, adaptive traversal, and symbology decoding remain
+out of scope.
+
+## 2026-08-08 — Linear cellular sheaf, Gate 4
+
+### Objective
+
+Add an explicit Gaussian likelihood/observation operator and seeded sensor
+noise to the fixed aligned multi-scanline experiment. Separate the value of
+confidence weighting, deconvolution, and sheaf consistency through an
+ablation against progressively stronger baselines.
+
+### Construction
+
+- Represent local optical mixing with a row-normalized `4 x 4` Gaussian matrix
+  using `sigma = 1.0` module.
+- Build the complete observation operator as nine independent copies of that
+  matrix, one for each window stalk.
+- Generate measurements from the known latent stalks with Gaussian sensor
+  noise of standard deviation `0.10` and random seed `11`.
+- Retain the controlled middle-scanline damage from Gate 3, replacing its
+  affected observations with noisy gray saturation and oracle confidence
+  `0.02`.
+- Use Tikhonov strength `0.02` for both deconvolution methods and sheaf strength
+  `2.0` for the joint method.
+- Compare raw averaging, confidence-weighted averaging, independent local
+  deconvolution, and joint sheaf deconvolution.
+
+### Result
+
+The complete notebook executed successfully from a clean kernel, with every
+assertion passing. Results for the fixed seeded example were:
+
+| Estimator | RMSE | Bit-error rate | Thresholded result correct |
+| --- | ---: | ---: | --- |
+| Raw mean | 0.3514 | 0.1250 | No |
+| Confidence mean | 0.3387 | 0.1250 | No |
+| Independent deconvolution | 0.2419 | 0.1250 | No |
+| Joint sheaf deconvolution | 0.1534 | 0.0000 | Yes |
+
+Independent deconvolution has latent consistency energy `3.518205`; adding the
+sheaf penalty reduces it to `0.008264`. The final continuous estimate is
+`[0.8445, 1.0508, 0.1410, 0.7143, 0.0763, 0.0227, 0.8078, 0.1297]`, which
+thresholds to the exact eight-module truth.
+
+### Interpretation
+
+Confidence weighting cannot undo optical mixing by itself. Independent local
+deconvolution models the blur but amplifies ambiguity and permits duplicate
+latent module estimates to disagree. In this example, the sheaf penalty makes
+the local inverse problems support one consistent global estimate and corrects
+the remaining bit error.
+
+This is a positive single-example result, not evidence of general superiority
+or embedded performance. The experiment uses one hand-selected sequence, one
+blur setting, one noise realization, oracle alignment, oracle confidence, and
+a known blur operator. The module-space Gaussian matrix is not yet a complete
+pixel-level camera model. The unconstrained linear estimate can leave `[0, 1]`
+slightly, as demonstrated by the value `1.0508`; future probability outputs may
+need box constraints or calibration.
+
+### Review checkpoint
+
+Stop here. The next gate, only after explicit approval, is a small seeded sweep
+over blur, noise, and damage levels. It should report decode success, RMSE,
+runtime, and approximate working memory for all four estimators. Unknown
+alignment, adaptive direction, real symbology, and checksum validation remain
 out of scope.

@@ -15,7 +15,8 @@ advancing only after the previous experiment has been reviewed:
 
 1. [`notebooks/01_linear_cellular_sheaf.ipynb`](notebooks/01_linear_cellular_sheaf.ipynb)
    — linear cellular sheaves, local-to-global consistency, and overlapping
-   vector stalks with fixed multi-scanline fusion.
+   vector stalks with fixed multi-scanline fusion and a Gaussian observation
+   model.
 2. `notebooks/02_discrete_sheaf_constraints.ipynb` — planned discrete
    compatibility and message passing experiments.
 3. `notebooks/03_bayesian_hmm_restoration.ipynb` — planned Bayesian/HMM
