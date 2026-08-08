@@ -17,7 +17,8 @@ advancing only after the previous experiment has been reviewed:
    — linear cellular sheaves, local-to-global consistency, and overlapping
    vector stalks with fixed multi-scanline fusion and a Gaussian observation
    model, including a seeded robustness/resource sweep and bounded matrix-free
-   solver.
+   solver, plus length scaling from 8 through 64 modules with adaptive
+   per-signal digitization.
 2. `notebooks/02_discrete_sheaf_constraints.ipynb` — planned discrete
    compatibility and message passing experiments.
 3. `notebooks/03_bayesian_hmm_restoration.ipynb` — planned Bayesian/HMM

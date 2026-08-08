@@ -7,7 +7,7 @@ research notebooks. A gate is advanced only after explicit review.
 
 | Notebook | Approach | Status |
 | --- | --- | --- |
-| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 6 complete |
+| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 7 complete |
 | `02_discrete_sheaf_constraints.ipynb` | Discrete compatibility/message passing | Planned |
 | `03_bayesian_hmm_restoration.ipynb` | Bayesian/HMM restoration | Planned |
 | Adaptive local decoder | Direction-changing joint inference | Design hypothesis documented |
@@ -484,11 +484,103 @@ hardware before the embedded-performance question is resolved.
 
 ### Linear notebook conclusion
 
-The first notebook now covers scalar intuition, overlapping vector stalks,
-fixed multi-scanline fusion, a blur/noise likelihood, baseline ablation,
-robustness and failure examples, and a bounded matrix-free solver. This
-completes the planned linear cellular-sheaf foundation.
+At this checkpoint, the first notebook covered scalar intuition, overlapping
+vector stalks, fixed multi-scanline fusion, a blur/noise likelihood, baseline
+ablation, robustness and failure examples, and a bounded matrix-free solver at
+the original eight-module scale. Gate 7 below adds the requested length-scaling
+check before closing the notebook.
 
-Stop here. After review and commit, the next research gate begins the separate
-`02_discrete_sheaf_constraints.ipynb` with a tiny branching compatibility graph
-before introducing barcode states, adaptive direction, or symbology rules.
+## 2026-08-08 — Linear cellular sheaf, Gate 7
+
+### Objective
+
+Check whether the fixed local cellular-sheaf construction remains useful and
+computationally shaped for constrained devices as the global binary sequence
+grows from 8 to 64 modules. Keep this as a restoration experiment rather than
+building a complete EAN-13 or Code 128 decoder.
+
+### Construction
+
+- Test powers-of-two lengths `8, 16, 32, 64` with 32 seeded trials at each
+  length. The initially explored 128- and 256-module cases were removed by
+  request.
+- Hold the local model fixed: three scanlines, four-module stalks, two-module
+  overlap, Gaussian blur sigma `0.9`, sensor-noise standard deviation `0.12`,
+  and a low-confidence damaged middle-scanline region of width `N / 8`.
+- Use the same 24-update `float32` matrix-free CG budget at every length.
+- Compare raw scanline averaging, confidence-weighted averaging, dense direct
+  sheaf recovery, and matrix-free sheaf recovery at every retained length.
+- Replace the fixed `0.5` Gate 7 digitization threshold with an independently
+  learned threshold for every estimate and trial.
+- Record exact-sequence success, BER, RMSE, current-host estimator time, and
+  lower-bound working-storage growth.
+- Draw one seeded example at every length as a truth barcode, three degraded
+  scanline strips, final digitized strip, and raw/restored continuous signals.
+
+The generalized vectorized Laplacian agrees with the earlier eight-module
+local operator to `4.441e-16`, which is floating-point roundoff.
+
+### Adaptive Gate 7 digitization
+
+The digitizer initializes low and high signal centers from the minimum and
+maximum restored values. It repeatedly splits the samples at the centers'
+midpoint and replaces both centers with the means of their assigned groups.
+After at most eight updates, it uses
+`threshold = (low_center + high_center) / 2`. Values below the threshold become
+zero; values at or above it become one.
+
+This is lightweight one-dimensional two-means clustering. It produces one
+global threshold per restored signal, not a threshold that changes along the
+barcode. The table reports the median of the 32 independently learned
+thresholds at each length.
+
+### Matrix-free result
+
+| Modules | Variables | Median threshold | Exact success | Mean BER | Mean RMSE | Median current-host time |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 8 | 36 | 0.4917 | 100.0% | 0.00000 | 0.1477 | 1,058.64 us |
+| 16 | 84 | 0.4958 | 90.6% | 0.00781 | 0.1490 | 1,117.25 us |
+| 32 | 180 | 0.4900 | 93.8% | 0.00195 | 0.1386 | 1,225.00 us |
+| 64 | 372 | 0.4873 | 90.6% | 0.00146 | 0.1418 | 1,467.07 us |
+
+At 64 modules, raw and confidence-weighted averaging achieve `18.8%` and
+`21.9%` exact recovery, with mean BER `0.03809` and `0.03760` respectively.
+The matrix-free sheaf achieves `90.6%` exact recovery and mean BER `0.00146`.
+Its mean RMSE remains near `0.14` across the retained length sweep.
+
+The adaptive rule does not automatically improve a poorly separated signal.
+It hurts some short raw-baseline cases because only a few blurred values are
+available to infer two clusters. The restored sheaf signal is much more
+bimodal, so its recovery remains strong. The medians remain near `0.5` because
+this synthetic likelihood is already normalized; unlike a fixed threshold,
+the individually learned values can move when gain or offset changes.
+
+Exact success is not length-normalized: one incorrect module fails the entire
+sequence. It can therefore fall as sequences grow even if BER stays stable or
+improves. BER and RMSE are the more meaningful cross-length measures here.
+
+### Runtime and storage interpretation
+
+The matrix-free Python time rises from about `1.06 ms` at 8 modules to
+`1.47 ms` at 64 modules. This is useful scaling evidence but is not an
+embedded latency measurement. At 64 modules, generic dense `numpy.linalg.solve`
+takes a median `8.63 ms`, versus `1.47 ms` for matrix-free CG. That comparison
+includes a fresh dense factorization for every case; an implementation that
+can reuse a factorization would change the timing tradeoff.
+
+With fixed local geometry and buffer count, the illustrative matrix-free core,
+confidence, and observation storage grows linearly to `10.23 KiB` at 64
+modules. One `float64` dense normal matrix alone would occupy `1.06 MiB` at
+that length, before right-hand sides, factorization workspace, images, code,
+stack, or decoding state.
+
+### Linear notebook conclusion
+
+The first approach now includes the requested long-sequence evidence and is
+complete as a research foundation. It demonstrates local-to-global continuous
+restoration and embedded-shaped storage, but still assumes known alignment,
+known blur/confidence, fixed straight scanlines, and generic binary sequences.
+
+Stop here after commit. The discrete-sheaf notebook remains planned, but it is
+not started automatically; additional ideas for the current approach come
+first.
