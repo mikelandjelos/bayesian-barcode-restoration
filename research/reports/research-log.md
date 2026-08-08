@@ -7,7 +7,7 @@ research notebooks. A gate is advanced only after explicit review.
 
 | Notebook | Approach | Status |
 | --- | --- | --- |
-| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 4 implemented |
+| `01_linear_cellular_sheaf.ipynb` | Linear cellular sheaf | Gate 5 implemented |
 | `02_discrete_sheaf_constraints.ipynb` | Discrete compatibility/message passing | Planned |
 | `03_bayesian_hmm_restoration.ipynb` | Bayesian/HMM restoration | Planned |
 | Adaptive local decoder | Direction-changing joint inference | Design hypothesis documented |
@@ -300,3 +300,122 @@ over blur, noise, and damage levels. It should report decode success, RMSE,
 runtime, and approximate working memory for all four estimators. Unknown
 alignment, adaptive direction, real symbology, and checksum validation remain
 out of scope.
+
+## 2026-08-08 — Linear cellular sheaf, Gate 5
+
+### Objective
+
+Replace the single Gate 4 example with a small reproducible robustness map and
+an initial resource assessment. Measure exact-sequence success, continuous
+RMSE, and host runtime for all four estimators across blur, noise, damage, and
+random binary sequences. Contrast the dense research implementation with an
+illustrative matrix-free embedded state budget.
+
+### Construction
+
+- Use blur sigma values `0.0`, `0.6`, and `1.0` modules.
+- Use sensor-noise standard deviations `0.0`, `0.08`, and `0.16`.
+- Damage `0`, `1`, or `3` centered modules in the middle scanline, assigning
+  damaged local measurements confidence `0.02` and noisy gray saturation.
+- Generate 24 nonconstant random eight-module sequences per condition with
+  seed `29`.
+- Evaluate 648 matched cases per estimator, or 2,592 estimator runs in total.
+- Precompute the fixed normal matrices for each blur/damage condition and time
+  the per-observation estimation path using `perf_counter_ns`.
+- Estimate dominant named-array memory for the transparent dense `float64`
+  implementation and an illustrative five-vector, matrix-free `float32` core.
+
+### Aggregate result
+
+The complete notebook executed successfully from a clean kernel, with every
+assertion passing.
+
+| Estimator | Exact success | Mean RMSE | Median host time | Hardest-condition success |
+| --- | ---: | ---: | ---: | ---: |
+| Raw mean | 80.1% | 0.1988 | 48.37 us | 33.3% |
+| Confidence mean | 80.6% | 0.1758 | 42.27 us | 41.7% |
+| Independent deconvolution | 91.5% | 0.1434 | 70.10 us | 54.2% |
+| Joint sheaf deconvolution | 98.3% | 0.0940 | 69.14 us | 79.2% |
+
+The hardest condition is blur sigma `1.0`, sensor-noise standard deviation
+`0.16`, and three damaged modules. The joint method does not recover every
+case, which establishes a useful failure boundary rather than a guarantee.
+
+The independent and joint direct solves have effectively the same host timing
+at this tiny fixed matrix size; their small measured ordering should not be
+interpreted as an algorithmic speed advantage. Python/NumPy host timings do not
+predict microcontroller latency.
+
+### Memory interpretation
+
+Approximate dominant named-array memory in the current dense `float64`
+formulation is:
+
+| Estimator | Approximate memory |
+| --- | ---: |
+| Raw mean | 0.41 KiB |
+| Confidence mean | 0.69 KiB |
+| Independent deconvolution | 31.50 KiB |
+| Joint sheaf deconvolution | 41.62 KiB |
+
+These figures exclude LAPACK workspace, Python objects, image storage, and
+notebook output, so they are lower bounds rather than measured peak RAM. The
+dense joint solve is not the intended embedded implementation. Five `float32`
+state vectors plus one local `4 x 4` operator occupy 784 bytes, illustrating
+that an implicit, bounded iterative core could be small; this excludes solver
+history, image buffers, graph/search state, and the future decoder.
+
+### Interpretation
+
+Across this limited synthetic grid, the joint likelihood-plus-consistency model
+improves both exact recovery and continuous error over confidence weighting and
+independent deconvolution. The gain grows under stronger combined degradation,
+but the method still fails on some hardest cases. The evidence justifies
+testing an embedded-style matrix-free solver, not claiming a production-ready
+decoder or universal advantage.
+
+### Review checkpoint
+
+Stop here. The next decision, only after explicit approval, is whether to add
+one matrix-free fixed-iteration solver gate before closing this notebook or to
+proceed directly to the separate discrete compatibility/message-passing
+notebook. Unknown alignment, adaptive direction, real symbology, and checksum
+validation remain later work.
+
+### Diagnostic follow-up: representative difficult cases
+
+After review, the sweep was extended to retain compact per-case truth,
+observation, and estimator arrays. For five distinct degradation profiles, the
+notebook now prints the trial with the largest joint-sheaf RMSE among the same
+24 seeded candidates used in the aggregate statistics.
+
+| Profile | Settings `(blur, noise, damage width)` | Truth | Joint result | Errors | Joint RMSE |
+| --- | --- | --- | --- | ---: | ---: |
+| Noise only | `(0.0, 0.16, 0)` | `00011011` | `00011011` | 0 | 0.1302 |
+| Blur only | `(1.0, 0.00, 0)` | `10101101` | `10101101` | 0 | 0.1985 |
+| Damage only | `(0.0, 0.00, 3)` | `01111110` | `01111110` | 0 | 0.0250 |
+| Blur + noise | `(1.0, 0.16, 0)` | `11000010` | `11000000` | 1 | 0.3629 |
+| Blur + noise + damage | `(1.0, 0.16, 3)` | `01000111` | `11000111` | 1 | 0.3370 |
+
+The detailed output includes all three glued observed scanlines and every
+estimator's continuous estimate, thresholded bits, bit-error count, and RMSE.
+The notebook also renders one compact two-panel row per profile: an observed-
+scanline heatmap beside the truth, threshold, and all four global continuous
+estimates on shared axes.
+It shows several important qualifications:
+
+- With identity blur and no damage, sheaf consistency adds no benefit over
+  independent estimates for the selected noise-only case.
+- In the blur-only case, raw fusion makes two bit errors and independent
+  deconvolution makes one, while the joint method recovers the exact sequence.
+- With known confidence and no blur/noise, confidence averaging is already
+  excellent; the sheaf is correct but not necessary.
+- In the selected blur-plus-noise case, the joint method fails the same bit as
+  the other estimators and has higher RMSE than independent deconvolution.
+- Under combined blur, noise, and damage, the joint method reduces two baseline
+  bit errors to one but does not fully recover the truth.
+
+These examples confirm that the sheaf penalty is most useful when overlapping
+latent inverse problems need reconciliation. It is not a universal denoiser,
+and strong consistency can be harmful when all redundant observations share
+the same ambiguity.
